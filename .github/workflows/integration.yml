@@ -1,0 +1,80 @@
+name: Integration
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'action.yml'
+      - '.github/workflows/integration.yml'
+      - 'tests/**'
+  pull_request:
+    paths:
+      - 'action.yml'
+      - '.github/workflows/integration.yml'
+      - 'tests/**'
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Prepare cache
+        id: prepare_cache
+        working-directory: tests/fixtures
+        run: |
+          echo "${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" > docker/test/uniq.txt
+
+      - name: Prepare service
+        id: prepare
+        uses: ./
+        with:
+          context-dir: tests/fixtures/docker/test
+          dir: tests/fixtures
+          service-name: test-service
+
+      - name: Check cache
+        id: check_cache
+        run: |
+          test "${{ steps.prepare.outputs.cache-hit }}" = "false"
+
+      - name: Check service
+        id: check_service
+        working-directory: tests/fixtures
+        run: |
+          docker compose run --rm \
+          test-service bash -e << EOC
+            cat /etc/debian_version
+          EOC
+
+  post-check:
+    name: Post check
+    runs-on: ubuntu-24.04
+    needs: check
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Prepare cache
+        id: prepare_cache
+        working-directory: tests/fixtures
+        run: |
+          echo "${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" > docker/test/uniq.txt
+
+      - name: Prepare service
+        id: prepare_service
+        uses: ./
+        with:
+          context-dir: tests/fixtures/docker/test
+          dir: tests/fixtures
+          service-name: test-service
+
+      - name: Check cache
+        id: check_cache
+        run: |
+          test "${{ steps.prepare_service.outputs.cache-hit }}" = "true"
