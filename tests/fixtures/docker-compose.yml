@@ -1,0 +1,30 @@
+# Docker compose file to support dev+ops activities
+version: '3'
+services:
+  # Ansible controller to test and run the playbooks
+  # developed in this repository (under ./ansible)
+  test-service:
+    build:
+      context: docker/test
+      dockerfile: Dockerfile
+      args:
+        user: appuser
+        group: appgroup
+        uid: "${_UID:-1000}"
+        gid: "${_GID:-1000}"
+    volumes:
+      - .:/var/lib/appdata
+    working_dir: /var/lib/appdata
+    stdin_open: true
+    tty: true
+    hostname: test-service.local
+    container_name: test-service.local
+    command: bash
+    network_mode: "bridge"
+    # Prevents container to hang the host
+    # Requires `... --compatibility run ...`
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 256M

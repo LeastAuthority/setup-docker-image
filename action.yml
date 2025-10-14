@@ -13,6 +13,14 @@ inputs:
     description: 'Disable saving cache upon cache miss'
     required: false
     default: false
+  context-dir:
+    description: 'Directory path to the docker context, relative to the directory root'
+    required: false
+    default: ""
+  dir:
+    description: 'Directory path to the docker-compose file and the context, relative to the directory root'
+    required: false
+    default: "."
 outputs:
   cache-hit:
     description:
@@ -30,8 +38,8 @@ runs:
             ( inputs.service-name || 'all'),
             runner.os,
             hashFiles(
-              'docker-compose*.yml',
-              format('docker/{0}/**', ( inputs.service-name || '*'))
+              format('{0}/docker-compose*.yml', inputs.dir),
+              format('{0}/*', ( inputs.context-dir || format('{0}/docker/{1}', inputs.dir, inputs.service-name) ))
             )
           ) }}
         read-only: ${{ inputs.cache-read-only }}
@@ -47,6 +55,7 @@ runs:
 
     - name: Build image(s)
       id: build
+      working-directory: "${{ inputs.dir }}"
       run: |
         docker images "*${{ inputs.service-name || '' }}"
         repository=${{ github.repository }}
