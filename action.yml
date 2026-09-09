@@ -31,7 +31,7 @@ runs:
     - name: Cache image(s)
       id: cache
       if: inputs.cache
-      uses: AndreKurait/docker-cache@0fe76702a40db986d9663c24954fc14c6a6031b7 # v0.6.0
+      uses: AndreKurait/docker-cache@7a3887908bdb97935395833df69b060cfcca0f7f # v0.7.0
       with:
         key: |
           ${{ format('docker-{0}-{1}-{2}',
